@@ -5,6 +5,8 @@ const uplink = require("uplink-nodejs");
 const libUplink = new uplink.Uplink();
 const fs = require('fs');
 
+const BUFFER_SIZE = 80000;
+
 const storjConfig = {
   apiKey: process.env.TARDIGRADE_KEY,
   satelliteURL: "us-central-1.tardigrade.io:7777",
@@ -18,18 +20,58 @@ const zipDirectory = (source, out) => {
 
 const uploadWrite = async (project, filePath, fileName) => {
   const uploadOptions = new uplink.UploadOptions();
-  const data = fs.readFileSync(filePath);
-  const stats = fs.statSync(filePath);
-  const fileSizeInBytes = stats.size;
 
   return await project.uploadObject(storjConfig.bucketName, fileName, uploadOptions).then(async (upload) => {
-    return await upload.write(data, fileSizeInBytes).then(async (uploadData) => {
-      console.log('uploadData', uploadData)
-      return await upload.commit().then(async result => {
-        console.log('commit result', result)
-        return await upload.info().then(object => console.log('Uploaded: ', object));
+    const fileHandle = fs.openSync(filePath, "rs");
+    const size = {
+      file: `${fs.statSync(filePath).size}`,
+      toWrite: 0,
+      actuallyWritten: 0,
+      totalWritten: 0
+    };
+
+    let buffer = new Buffer.alloc(BUFFER_SIZE);
+    let loop = true;
+    let bytesRead = 0;
+
+    while (loop) {
+      size.toWrite = size.file - size.totalWritten;
+
+      if (size.toWrite > BUFFER_SIZE) {
+        size.toWrite = BUFFER_SIZE;
+      } else if (size.toWrite === 0) {
+        break;
+      }
+
+      bytesRead = fs.readSync(fileHandle, buffer, 0, size.toWrite, size.totalWritten);
+
+      //
+      //Write data to storj V3 network
+      await upload.write(buffer, bytesRead).then(writeResult => {
+        size.actuallyWritten = writeResult.bytes_written;
+        size.totalWritten = size.totalWritten + size.actuallyWritten;
+        if((size.totalWritten > 0) && (size.file > 0)){
+            console.log("File Uploaded On Storj: ",((Number(size.totalWritten)/Number(size.file))*100).toFixed(4)," %");
+        }
+      }).catch(err => {
+        console.log("Failed to write data on storj V3 network");
+        console.log(err);
+        loop = false;
       });
-    }).catch(e => console.error(e));
+      if (size.totalWritten >= size.file ){
+        break;
+      }
+    }
+
+    fs.closeSync(fileHandle);
+    
+    return await upload.commit().then(() => {
+        console.log("\nObject stored on storj V3 network successfully");
+        console.log("file size: ", size.file);
+    }).catch((err) => {
+        console.log("Failed to commit object on storj V3 network");
+        console.log(err);
+    });
   });
 };
 
