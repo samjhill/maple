@@ -16,13 +16,13 @@ const zipDirectory = (source, out) => {
   return zipper.sync.zip(source).compress().save(out);
 };
 
-const uploadWrite = async (project, file) => {
+const uploadWrite = async (project, filePath, fileName) => {
   const uploadOptions = new uplink.UploadOptions();
-  const data = fs.readFileSync(file);
-  const stats = fs.statSync(file);
+  const data = fs.readFileSync(filePath);
+  const stats = fs.statSync(filePath);
   const fileSizeInBytes = stats.size;
 
-  return await project.uploadObject(storjConfig.bucketName, file, uploadOptions).then(async (upload) => {
+  return await project.uploadObject(storjConfig.bucketName, fileName, uploadOptions).then(async (upload) => {
     return await upload.write(data, fileSizeInBytes).then(async (uploadData) => {
       console.log('uploadData', uploadData)
       return await upload.commit().then(async result => {
@@ -76,7 +76,7 @@ connect().then(
       }
       const archiveName = `${new Date().toISOString()}.zip`;
       zipDirectory(__dirname + '/bin/exampleData/', __dirname + `/bin/${archiveName}`);
-      await uploadWrite(project, __dirname + `/bin/${archiveName}`).then(() => console.log('Finished uploading!'));
+      await uploadWrite(project, __dirname + `/bin/${archiveName}`, archiveName).then(() => console.log('Finished uploading!'));
       listObjects(project);
     });
   }
