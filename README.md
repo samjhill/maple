@@ -1,2 +1,3 @@
 # maple
-Distributed storage for solidproject.org
+
+Automatically syncs a given folder to distributed cloud storage for cheap & resilient storage

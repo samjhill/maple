@@ -1,0 +1,25 @@
+{
+  "name": "maple",
+  "version": "1.0.0",
+  "description": "distributed cloud backup for Solid Project nodes",
+  "main": "index.js",
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "uplink-nodejs": "^1.0.8",
+    "zip-local": "^0.3.4"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samjhill/maple.git"
+  },
+  "author": "Sam Hill",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/samjhill/maple/issues"
+  },
+  "homepage": "https://github.com/samjhill/maple#readme"
+}
