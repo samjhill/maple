@@ -117,9 +117,8 @@ connect().then(
         await createBucket(project);
       }
       const archiveName = `${new Date().toISOString()}.zip`;
-      zipDirectory(__dirname + '/bin/exampleData/', __dirname + `/bin/${archiveName}`);
+      zipDirectory(process.env.SOURCE, __dirname + `/bin/${archiveName}`);
       await uploadWrite(project, __dirname + `/bin/${archiveName}`, archiveName).then(() => console.log('Finished uploading!'));
-      listObjects(project);
     });
   }
 );
